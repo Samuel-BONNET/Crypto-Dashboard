@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Crypto Token Dashboard</h1>
+<p>Prix actualisés toutes les 2 secondes.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Token</th>
+      <th>Prix (USD)</th>
+      <th>24h Change (%)</th>
+    </tr>
+  </thead>
+  <tbody id="price-table"></tbody>
+</table>
+
+<canvas id="price-chart" width="900" height="350"></canvas>
+
+<script>
+const coins = {{ coins|tojson }};
+const tableBody = document.getElementById("price-table");
+const ctx = document.getElementById("price-chart").getContext('2d');
+
+const datasets = coins.map(c => ({
+  label: c,
+  data: [],
+  borderWidth: 2,
+  tension: 0.2
+}));
+
+const chart = new Chart(ctx, {
+  type: 'line',
+  data: { labels: [], datasets },
+  options: {
+    responsive: true,
+    interaction: { mode: 'index', intersect: false },
+    scales: {
+      x: { title: { display: true, text: "Heure" }},
+      y: { title: { display: true, text: "Prix (USD)" }}
+    }
+  }
+});
+
+async function poll() {
+  const res = await fetch('/api/prices');
+  const json = await res.json();
+  const ts = new Date(json.timestamp).toLocaleTimeString();
+
+  chart.data.labels.push(ts);
+  if(chart.data.labels.length > 50) chart.data.labels.shift();
+
+  tableBody.innerHTML = "";
+  coins.forEach((c,i) => {
+    const price = json.prices[c].usd;
+    const change = json.prices[c].usd_24h_change?.toFixed(2);
+    chart.data.datasets[i].data.push(price);
+    if(chart.data.datasets[i].data.length > 50) chart.data.datasets[i].data.shift();
+
+    const row = `<tr>
+        <td>${c}</td>
+        <td>${price.toLocaleString()}</td>
+        <td style="color:${change >= 0 ? 'green':'red'}">${change}%</td>
+      </tr>`;
+    tableBody.insertAdjacentHTML("beforeend", row);
+  });
+  chart.update();
+}
+
+poll();
+setInterval(poll, 2000);
+</script>
+{% endblock %}
+
+
+

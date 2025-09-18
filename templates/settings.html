@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Settings</h1>
+<p>Choisissez un thème :</p>
+<button onclick="setTheme('light')">Clair</button>
+<button onclick="setTheme('dark')">Sombre</button>
+
+<script>
+function setTheme(mode){
+  document.body.dataset.theme = mode;
+  localStorage.setItem("theme", mode);
+}
+window.onload = () => {
+  const saved = localStorage.getItem("theme");
+  if(saved) document.body.dataset.theme = saved;
+}
+</script>
+{% endblock %}
+
+
+
