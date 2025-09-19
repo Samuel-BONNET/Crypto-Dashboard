@@ -7,16 +7,35 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <nav>
-        <a href="/">Token</a>
-        <a href="/portfolio">Portfolio</a>
-        <a href="/news">News</a>
-        <a href="/settings">Settings</a>
-        <a href="/about">About</a>
-    </nav>
-    <main>
+<div class="layout">
+    <main class="content">
         {% block content %}{% endblock %}
     </main>
+    <aside class="sidebar">
+        <h3>Tokens</h3>
+        <ul id="token-list"></ul>
+    </aside>
+</div>
+<script>
+const coins = {{ coins|tojson if coins is defined else "[]" }};
+async function refreshSidebar(){
+    const res = await fetch('/api/prices');
+    const json = await res.json();
+    const list = document.getElementById("token-list");
+    list.innerHTML = "";
+    coins.forEach(c => {
+        const price = json.prices[c].usd;
+        const li = document.createElement("li");
+        li.innerHTML = `<a href="/token/${c}">${c}</a>
+                        <span class="price">${price.toLocaleString()}</span>`;
+        list.appendChild(li);
+    });
+}
+if(coins.length > 0){
+    refreshSidebar();
+    setInterval(refreshSidebar, 2000);
+}
+</script>
 </body>
 </html>
 

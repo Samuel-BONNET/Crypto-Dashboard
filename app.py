@@ -1,50 +1,69 @@
 from flask import Flask, render_template, jsonify
 import requests
-from datetime import datetime
+import time
 
 app = Flask(__name__)
 
-COINS = ["bitcoin", "ethereum", "solana", "litecoin", "ripple", "dogecoin", "cardano", "polkadot", "avalanche-2", "tron"]
-VS = "usd"
+# --- Configuration ---
+TOKENS = [
+    ("BTCUSDT", "BTC"),
+    ("ETHUSDT", "ETH"),
+    ("SOLUSDT", "SOL"),
+    ("LTCUSDT", "LTC"),
+    ("XRPUSDT", "XRP"),
+    ("DOGEUSDT", "DOGE"),
+    ("ADAUSDT", "ADA"),
+    ("DOTUSDT", "DOT"),
+    ("AVAXUSDT", "AVAX"),
+    ("TRXUSDT", "TRX"),
+]
 
-def fetch_prices():
-    """Appelle CoinGecko pour obtenir les prix actuels."""
-    url = "https://api.coingecko.com/api/v3/simple/price"
-    params = {
-        "ids": ",".join(COINS),
-        "vs_currencies": VS,
-        "include_24hr_change": "true"
-    }
-    r = requests.get(url, params=params, timeout=10)
-    r.raise_for_status()
-    data = r.json()
-    return {"timestamp": datetime.utcnow().isoformat() + "Z", "prices": data}
+last_prices = None
+last_fetch_time = 0
 
 @app.route("/")
-def token_dashboard():
-    return render_template("index.html", coins=COINS)
+def home():
+    return render_template("index.html", tokens=TOKENS)
 
-@app.route("/settings")
-def settings():
-    return render_template("settings.html")
-
-@app.route("/news")
-def news():
-    return render_template("news.html")
-
-@app.route("/portfolio")
-def portfolio():
-    return render_template("portfolio.html")
-
-@app.route("/about")
-def about():
-    return render_template("about.html")
+@app.route("/token/<token_id>")
+def token_page(token_id):
+    if token_id not in [t[0] for t in TOKENS]:
+        return "Token inconnu", 404
+    return render_template("token.html", token_id=token_id)
 
 @app.route("/api/prices")
-def api_prices():
-    return jsonify(fetch_prices())
+def get_prices():
+    global last_prices, last_fetch_time
+    now = time.time()
+    if last_prices is None or now - last_fetch_time > 5:  # cache 5 sec
+        last_prices = {}
+        for token, _ in TOKENS:
+            r = requests.get(f"https://api.binance.com/api/v3/ticker/price?symbol={token}")
+            r.raise_for_status()
+            data = r.json()
+            last_prices[token] = {"usd": float(data["price"])}
+        last_fetch_time = now
+    return jsonify(last_prices)
+
+@app.route("/api/history/<token_id>")
+def token_history(token_id):
+    if token_id not in [t[0] for t in TOKENS]:
+        return jsonify({"error": "Token inconnu"}), 404
+
+    # lire interval et limit depuis query params
+    from flask import request
+    interval = request.args.get("interval", "1m")
+    limit = int(request.args.get("limit", 1440))
+
+    url = "https://api.binance.com/api/v3/klines"
+    params = {"symbol": token_id, "interval": interval, "limit": limit}
+    r = requests.get(url, params=params)
+    r.raise_for_status()
+    data = r.json()
+
+    prices = [[item[0], float(item[4])] for item in data]  # timestamp et close
+    return jsonify({"prices": prices})
+
 
 if __name__ == "__main__":
     app.run(debug=True)
-
-
