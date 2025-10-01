@@ -1,10 +1,17 @@
-# 🪙 Crypto Dashboard
+#  🚀 Crypto Dashboard
+
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Flask](https://img.shields.io/badge/Flask-000000?style=for-the-badge&logo=flask&logoColor=white)
+![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
+![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
 
 **Crypto Dashboard** est une application web interactive qui permet de suivre en temps réel les prix de vos crypto-monnaies préférées. L’interface inclut :
+
 
 * Un **tableau de bord** avec tous les tokens et leurs prix mis à jour en direct
 * Une **page graphique** par token avec l’évolution des prix sur différentes périodes (15 min, 4 h, 7 j)
 * Une expérience responsive et moderne, avec **sidebar**, boutons et graphiques interactifs
+
 
 ---
 
